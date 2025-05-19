@@ -31,7 +31,7 @@ def preprocess(text: str):
 vectorizer = pickle.load(open("vectorizer.sav", "rb"))
 
 # Load model
-trad_model = pickle.load(open("model.sav", "rb"))
+trad_model = pickle.load(open("trad_model.sav", "rb"))
 
 st.title("🍃 Climate Sentiment Analysis")
 
