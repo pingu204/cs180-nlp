@@ -7,9 +7,13 @@ Team Machine Unlearning
 import streamlit as st
 import pickle
 import re
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import numpy as np
 
+def handle_negations(s: str):
+    negation_pattern = r'\b(not|no|never|none|cannot|cant|wont|dont)\b[\w\s]+'
+    return re.sub(negation_pattern, lambda match: match.group(0).replace(' ', '_'), s)
 
-# Data preprocessing
 def clean_text(s: str):
     # Only retain alphanumeric and whitespace characters
     s = re.sub(pattern=rf"|[^a-zA-Z0-9\s]", repl="", string=s, flags=re.IGNORECASE)
@@ -22,16 +26,35 @@ def clean_text(s: str):
 
     return s
 
-
 def preprocess(text: str):
-    return clean_text(text)
+    return handle_negations(clean_text(text))
 
+def sentiment_scores(sentence):
+    sid_obj = SentimentIntensityAnalyzer()
+    sentiment_dict = sid_obj.polarity_scores(sentence)
+
+    return sentiment_dict['compound']
+
+def predict(x, sentiment_scores):
+    # Predict on the two models
+    mnb_pred = nb_model.predict_proba(x)
+    lr_pred = lr_model.predict_proba(np.array(sentiment_scores).reshape(-1,1))
+
+    # Model weights
+    mnb_w, lr_w = 0.4, 0.6
+
+    tot_pred = mnb_pred * mnb_w + lr_pred * lr_w
+
+    # Get the index of the highest probability
+    # return np.argmax(mnb_pred, axis=1), [max(prob) for prob in mnb_pred]
+    return np.argmax(tot_pred, axis=1), [max(prob) for prob in tot_pred]
 
 # Load vectorizer
 vectorizer = pickle.load(open("vectorizer.sav", "rb"))
 
 # Load model
-trad_model = pickle.load(open("trad_model.sav", "rb"))
+nb_model = pickle.load(open("trad_model.sav", "rb"))
+lr_model = pickle.load(open("lr_model.sav", "rb"))
 
 st.title("🍃 Climate Sentiment Analysis")
 
@@ -56,8 +79,10 @@ with st.form("nlp", enter_to_submit=True):
             st.subheader("Classification")
 
             test_input = list(map(preprocess, [txt]))
-
-            result = trad_model.predict(vectorizer.transform(test_input))[0]
+            x_test = vectorizer.transform(test_input).toarray()
+            sentiment_score = [sentiment_scores(txt)]
+            result, prob = predict(x_test, sentiment_score)
+            result, prob = result[0], prob[0]
 
             class_names = {0: "Risk", 1: "Neutral", 2: "Opportunity"}
 
@@ -67,9 +92,10 @@ with st.form("nlp", enter_to_submit=True):
                 case "Neutral":
                     st.info("Neutral")
                 case "Opportunity":
-                    st.success("Gowch")
+                    st.success("Opportunity")
                 case default:
                     st.warning("Error")
+            st.write(f"{prob}")
         else:
             st.write("Please fill in all the required fields.")
 
