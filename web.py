@@ -9,6 +9,8 @@ import pickle
 import re
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import numpy as np
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
 
 def handle_negations(s: str):
     negation_pattern = r'\b(not|no|never|none|cannot|cant|wont|dont)\b[\w\s]+'
@@ -28,6 +30,26 @@ def clean_text(s: str):
 
 def preprocess(text: str):
     return handle_negations(clean_text(text))
+
+def bert_clean_text(s: str):
+    s = re.sub(r'[“”]', '"', s)
+     
+    # Replace all curly single quotes with '
+    s = re.sub(r"[‘’]", "'", s)
+    
+    # Replace en dash and em dash with hyphen
+    s = re.sub(r"[–—]", "-", s)
+
+    # Only retain alphanumeric, whitespace characters, single and double quotes, and hyphens
+    s = re.sub(pattern=rf"[^a-zA-Z0-9\s\-\'\"]", repl="", string=s, flags=re.IGNORECASE)
+
+    # Remove extra whitespaces
+    s = re.sub(pattern=r"\s+", repl=" ", string=s).strip()
+
+    return s
+
+def bert_preprocess(text: str):
+    return clean_text(text)
 
 def sentiment_scores(sentence):
     sid_obj = SentimentIntensityAnalyzer()
@@ -49,12 +71,25 @@ def predict(x, sentiment_scores):
     # return np.argmax(mnb_pred, axis=1), [max(prob) for prob in mnb_pred]
     return np.argmax(tot_pred, axis=1), [max(prob) for prob in tot_pred]
 
+def bert_predict(text: str):
+    inputs = tokenizer(bert_preprocess(text), return_tensors="pt", truncation=True, padding=True)
+    with torch.no_grad():
+        outputs = bert_model(**inputs)
+        logits = outputs.logits
+        probs = torch.softmax(logits, dim=1).squeeze().tolist()
+
+    pred_class = int(torch.argmax(logits, dim=1).item())
+    confidence = max(probs)
+    return pred_class, confidence
+
 # Load vectorizer
 vectorizer = pickle.load(open("./models/vectorizer.sav", "rb"))
+tokenizer = AutoTokenizer.from_pretrained("njlr/cs180-project")
 
 # Load model
 nb_model = pickle.load(open("./models/trad_model.sav", "rb"))
 lr_model = pickle.load(open("./models/lr_model.sav", "rb"))
+bert_model = AutoModelForSequenceClassification.from_pretrained("njlr/cs180-project")
 
 st.title("🍃 Climate Sentiment Analysis")
 
@@ -77,14 +112,16 @@ with st.form("nlp", enter_to_submit=True):
     if submitted:
         if txt and method:
             st.subheader("Classification")
-
-            test_input = list(map(preprocess, [txt]))
-            x_test = vectorizer.transform(test_input).toarray()
-            sentiment_score = [sentiment_scores(txt)]
-            result, prob = predict(x_test, sentiment_score)
-            result, prob = result[0], prob[0]
-
             class_names = {0: "Risk", 1: "Neutral", 2: "Opportunity"}
+
+            if method == "Traditional":
+                test_input = list(map(preprocess, [txt]))
+                x_test = vectorizer.transform(test_input).toarray()
+                sentiment_score = [sentiment_scores(txt)]
+                result, prob = predict(x_test, sentiment_score)
+                result, prob = result[0], prob[0]
+            elif method == "Hugging Face Transformer":
+                result, prob = bert_predict(txt)
 
             match class_names[result]:
                 case "Risk":
