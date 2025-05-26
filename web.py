@@ -50,11 +50,11 @@ def predict(x, sentiment_scores):
     return np.argmax(tot_pred, axis=1), [max(prob) for prob in tot_pred]
 
 # Load vectorizer
-vectorizer = pickle.load(open("models/vectorizer.sav", "rb"))
+vectorizer = pickle.load(open("./models/vectorizer.sav", "rb"))
 
 # Load model
-nb_model = pickle.load(open("models/trad_model.sav", "rb"))
-lr_model = pickle.load(open("models/lr_model.sav", "rb"))
+nb_model = pickle.load(open("./models/trad_model.sav", "rb"))
+lr_model = pickle.load(open("./models/lr_model.sav", "rb"))
 
 st.title("🍃 Climate Sentiment Analysis")
 
