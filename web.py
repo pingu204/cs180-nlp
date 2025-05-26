@@ -120,7 +120,7 @@ with st.form("nlp", enter_to_submit=True):
                 sentiment_score = [sentiment_scores(txt)]
                 result, prob = predict(x_test, sentiment_score)
                 result, prob = result[0], prob[0]
-            elif method == "Hugging Face Transformer":
+            elif method == "Deep Learning":
                 result, prob = bert_predict(txt)
 
             match class_names[result]:
