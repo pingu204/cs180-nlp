@@ -72,15 +72,23 @@ def predict(x, sentiment_scores):
     return np.argmax(tot_pred, axis=1), [max(prob) for prob in tot_pred]
 
 def bert_predict(text: str):
-    inputs = tokenizer(bert_preprocess(text), return_tensors="pt", truncation=True, padding=True)
+    text = bert_preprocess(text)
+
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
     with torch.no_grad():
         outputs = bert_model(**inputs)
-        logits = outputs.logits
+        logits = outputs.logits  # shape: [1, num_classes] or [num_classes]
+
+    # Ensure logits is 2D for softmax
+    if logits.dim() == 1:
+        probs = torch.softmax(logits, dim=0).tolist()
+    else:
         probs = torch.softmax(logits, dim=1).squeeze().tolist()
 
-    pred_class = int(torch.argmax(logits, dim=1).item())
+    pred_class = int(torch.argmax(probs))
     confidence = max(probs)
     return pred_class, confidence
+
 
 # Load vectorizer
 vectorizer = pickle.load(open("./models/vectorizer.sav", "rb"))
