@@ -74,27 +74,31 @@ def predict(x, sentiment_scores):
 def bert_predict(text: str):
     text = bert_preprocess(text)
 
+    # Tokenize & move inputs to device
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+
     with torch.no_grad():
         outputs = bert_model(**inputs)
-        logits = outputs.logits  # shape: [1, num_classes] or [num_classes]
+        logits = outputs.logits 
 
-    # Ensure logits is 2D for softmax
     probs = torch.softmax(logits, dim=1).squeeze()
+    pred_class = int(torch.argmax(probs).item())
+    confidence = float(torch.max(probs).item())
 
-    pred_class = int(torch.argmax(probs))
-    confidence = max(probs)
     return pred_class, confidence
-
 
 # Load vectorizer
 vectorizer = pickle.load(open("./models/vectorizer.sav", "rb"))
 tokenizer = AutoTokenizer.from_pretrained("njlr/cs180-project")
 
+device = torch.device("cpu")
+
 # Load model
 nb_model = pickle.load(open("./models/trad_model.sav", "rb"))
 lr_model = pickle.load(open("./models/lr_model.sav", "rb"))
 bert_model = AutoModelForSequenceClassification.from_pretrained("njlr/cs180-project")
+bert_model.to(device)
 bert_model.eval()
 
 st.title("🍃 Climate Sentiment Analysis")
