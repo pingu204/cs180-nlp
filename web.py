@@ -74,7 +74,6 @@ def predict(x, sentiment_scores):
 def bert_predict(text: str):
     text = bert_preprocess(text)
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-    inputs = {k: v.to(device) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = bert_model(**inputs)
         logits = outputs.logits
@@ -94,7 +93,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 nb_model = pickle.load(open("./models/trad_model.sav", "rb"))
 lr_model = pickle.load(open("./models/lr_model.sav", "rb"))
 bert_model = AutoModelForSequenceClassification.from_pretrained("njlr/cs180-project")
-bert_model.to(device)
 bert_model.eval()
 
 st.title("🍃 Climate Sentiment Analysis")
