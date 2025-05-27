@@ -73,38 +73,29 @@ def predict(x, sentiment_scores):
 
 def bert_predict(text: str):
     text = bert_preprocess(text)
-
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = bert_model(**inputs)
-        logits = outputs.logits 
-
-    probs = torch.softmax(logits, dim=1).squeeze()
-
-    pred_class = int(torch.argmax(probs))
-    confidence = max(probs)
+        logits = outputs.logits
+    probs = torch.softmax(logits, dim=1)
+    pred_class = int(torch.argmax(probs, dim=1).item())
+    confidence = float(torch.max(probs).item())
     return pred_class, confidence
+
 
 # Load vectorizer
 vectorizer = pickle.load(open("./models/vectorizer.sav", "rb"))
+tokenizer = AutoTokenizer.from_pretrained("njlr/cs180-project")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load model
 nb_model = pickle.load(open("./models/trad_model.sav", "rb"))
 lr_model = pickle.load(open("./models/lr_model.sav", "rb"))
-
-@st.cache_resource
-def load_bert_model():
-    model = AutoModelForSequenceClassification.from_pretrained("njlr/cs180-project")
-    model.eval()
-    return model
-
-@st.cache_resource
-def load_tokenizer():
-    return AutoTokenizer.from_pretrained("njlr/cs180-project")
-
-bert_model = load_bert_model()
-tokenizer = load_tokenizer()
-
+bert_model = AutoModelForSequenceClassification.from_pretrained("njlr/cs180-project")
+bert_model.to(device)
+bert_model.eval()
 
 st.title("🍃 Climate Sentiment Analysis")
 
