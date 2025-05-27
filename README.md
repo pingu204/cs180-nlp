@@ -3,8 +3,48 @@ This is the project repository of **Machine Unlearning** in partial fulfillment 
 
 The goal of this project is to perform sentiment analysis on an expert-annotated dataset containing climate-related paragraphs in corporate disclosures in order to mitigate the negative effects of climate change.
 
+## Code Structure 🖥️
+```
+cs180-nlp/
+├─ web.py
+├─ etc/
+├─ share/
+├─ models/
+│  ├─ bert/
+│  ├─ lr_model.sav
+│  ├─ trad_model.sav
+│  ├─ vectorizer.sav
+├─ predictions/
+│  ├─ bert_predictions.csv
+│  ├─ trad_predictions.csv
+├─ src/
+│  ├─ bert_predictions.ipynb
+│  ├─ bert_train.ipynb
+│  ├─ trad_demo.ipynb
+│  ├─ trad_predictions.ipynb
+│  ├─ trad_train.ipynb
+├─ .gitignore
+├─ requirements.txt
+├─ README.md
+```
+
 ## Data Source 🌐
-To be filled out
+The dataset contains climate-related paragraphs extracted from financial disclosures by mainly large listed companies. The paragraphs are annotated by authors and students at Universität Zürich and Friedrich-Alexander-Universität Erlangen-Nürnberg with majors in finance and sustainable finance, with labels being `Risk`, `Neutral`, and `Opportunity`. Moreover, the dataset is curated by:
+- Julia Anna Bingler
+- Mathias Kraus
+- Markus Leippold
+- Nicolas Webersinke
+
+## Dependencies 🗃️
+The project is deployed on [Streamlit](https://streamlit.io/). The dependencies needed for the web app to work is listed in `requirements.txt`.
+
+Nonetheless, the project in entirety made use of the following libraries:
+- `pandas`
+- `scikit-learn`
+- `vaderSentiment`
+- `pickle`
+- `transformers`
+- `evaluate`
 
 ## Methodology 📚
 The team employed both traditional machine learning and deep learning-based approaches in solving the problem.
@@ -31,37 +71,10 @@ Afterwards, the sentences are tokenized using a `tf-idf` tokenizer before fed to
 
 Initially, the traditional only made use of a multinomial Naive Bayes model. However, grid search and the implementation of the weighted ensemble was explored to improve the accuracy of the model.
 
-## Dependencies 🗃️
-The project is deployed on [Streamlit](https://streamlit.io/). The dependencies needed for the web app to work is listed in `requirements.txt`.
+### Deep Learning
 
-Nonetheless, the project in entirety made use of the following libraries:
-- `pandas`
-- `scikit-learn`
-- `vaderSentiment`
-- `pickle`
-...
+For the deep learning-based approach, a BERT-based model is fine tuned to the training and development dataset. 
 
-## Code Structure 🖥️
-```
-cs180-nlp/
-├─ web.py
-├─ etc/
-├─ share/
-├─ models/
-│  ├─ bert/
-│  ├─ lr_model.sav
-│  ├─ trad_model.sav
-│  ├─ vectorizer.sav
-├─ predictions/
-│  ├─ bert_predictions.csv
-│  ├─ trad_predictions.csv
-├─ src/
-│  ├─ bert_predictions.ipynb
-│  ├─ bert_train.ipynb
-│  ├─ trad_demo.ipynb
-│  ├─ trad_predictions.ipynb
-│  ├─ trad_train.ipynb
-├─ .gitignore
-├─ requirements.txt
-├─ README.md
-```
+The dataset was first preprocessed to normalize quotes, dashes, and remove special characters.
+
+Afterwards, the sentences are tokenized using a BERT tokenizer (i.e., `bert-base-cased`). The `AutoModelForSequenceClassification` is initialized with 3 output labels. The training part is handled by `TrainingArguments` and the evaluation metrics, such as accuracy, precision, recall, and F1-score are computed using the `evaluate` library. 
