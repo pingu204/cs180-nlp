@@ -45,6 +45,7 @@ Nonetheless, the project in entirety made use of the following libraries:
 - `pickle`
 - `transformers`
 - `evaluate`
+- `torch`
 
 ## Methodology 📚
 The team employed both traditional machine learning and deep learning-based approaches in solving the problem.
