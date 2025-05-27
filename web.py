@@ -98,7 +98,6 @@ device = torch.device("cpu")
 nb_model = pickle.load(open("./models/trad_model.sav", "rb"))
 lr_model = pickle.load(open("./models/lr_model.sav", "rb"))
 bert_model = AutoModelForSequenceClassification.from_pretrained("njlr/cs180-project")
-bert_model.to(device)
 bert_model.eval()
 
 st.title("🍃 Climate Sentiment Analysis")
