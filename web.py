@@ -80,10 +80,7 @@ def bert_predict(text: str):
         logits = outputs.logits  # shape: [1, num_classes] or [num_classes]
 
     # Ensure logits is 2D for softmax
-    if logits.dim() == 1:
-        probs = torch.softmax(logits, dim=0).tolist()
-    else:
-        probs = torch.softmax(logits, dim=1).squeeze().tolist()
+    probs = torch.softmax(logits, dim=1).squeeze()
 
     pred_class = int(torch.argmax(probs))
     confidence = max(probs)
